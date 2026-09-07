@@ -8,4 +8,4 @@ Repository owners retain the ability to change protection, unarchive or delete t
 
 The working application remains separate from this source snapshot. Settings, databases, uploaded files and generated pages are intentionally excluded. `.gitignore` protects against accidentally adding these runtime files, while the blank `settings.default.php` documents setup.
 
-The root and bundled-font license files retain the original copyright and license notices.
+The root and bundled-font license files retain the original copyright and license notices. Vichan stylesheet attribution is retained in `LICENSE.Vichan.md`, `LICENSE.Tinyboard.md` and the page footer.

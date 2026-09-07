@@ -121,11 +121,11 @@ trait BoardOperations
 
         $anonymous = $this->config->anonymous[array_rand($this->config->anonymous)];
 
-        $output = '<span class="postername">';
+        $output = '<span class="name postername">';
         $output .= ($name == '' && $tripcode == '') ? $anonymous : $name;
 
         if ($tripcode != '') {
-            $output .= '</span><span class="postertrip">!' . $tripcode;
+            $output .= '</span><span class="trip postertrip">!' . $tripcode;
         }
 
         $output .= '</span>';
@@ -157,8 +157,8 @@ trait BoardOperations
 
     private function fixLinksInRes(string $html): string
     {
-        $search = [' href="css/', ' src="js/', ' href="src/', ' href="thumb/', ' href="res/', ' href="imgboard.php', ' href="catalog.html', ' href="favicon.ico', 'src="thumb/', 'src="inc/', 'src="sticky.png', 'src="lock.png', ' action="imgboard.php', ' action="catalog.html'];
-        $replace = [' href="../css/', ' src="../js/', ' href="../src/', ' href="../thumb/', ' href="../res/', ' href="../imgboard.php', ' href="../catalog.html', ' href="../favicon.ico', 'src="../thumb/', 'src="../inc/', 'src="../sticky.png', 'src="../lock.png', ' action="../imgboard.php', ' action="../catalog.html'];
+        $search = [' href="stylesheets/', ' href="css/', ' src="js/', ' href="src/', ' href="thumb/', ' href="res/', ' href="imgboard.php', ' href="catalog.html', ' href="favicon.ico', 'src="thumb/', 'src="inc/', 'src="sticky.png', 'src="lock.png', ' action="imgboard.php', ' action="catalog.html'];
+        $replace = [' href="../stylesheets/', ' href="../css/', ' src="../js/', ' href="../src/', ' href="../thumb/', ' href="../res/', ' href="../imgboard.php', ' href="../catalog.html', ' href="../favicon.ico', 'src="../thumb/', 'src="../inc/', 'src="../sticky.png', 'src="../lock.png', ' action="../imgboard.php', ' action="../catalog.html'];
 
         return str_replace($search, $replace, $html);
     }
@@ -193,7 +193,7 @@ trait BoardOperations
         if (substr($message, -1, 1) != "\n") {
             $message .= "\n";
         }
-        return preg_replace('/^(&gt;[^\>](.*))\n/m', '<span class="unkfunc">\\1</span>' . "\n", $message);
+        return preg_replace('/^(&gt;[^\>](.*))\n/m', '<span class="quote unkfunc">\\1</span>' . "\n", $message);
     }
 
     private function deletePostImages(array $post): void

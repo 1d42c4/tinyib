@@ -10,6 +10,14 @@ For the first run, follow the configuration steps below to create `settings.php`
 
 The local server binds to the loopback interface. `local-router.php` exposes the board pages and media and blocks application code, configuration, database files, and scripts in upload directories.
 
+## Vichan styles
+
+The **Style** menu provides all 35 Vichan themes on the board, thread, catalog and management pages. Your browser remembers the selection. Posts, replies and forms use Vichan-compatible markup, with layout adjustments for desktop and phone screens. Theme images and fonts are served locally.
+
+Set `defaultstyle` in `settings.php` to a theme filename without `.css`, such as `style` (Yotsuba B), `futaba`, `dark` or `photon`. The menu is discovered from `stylesheets/*.css`; the older `stylesheets` configuration array no longer controls it. Layout adjustments are in `css/vichan-adapter.css`. See [VICHAN-STYLES.md](VICHAN-STYLES.md) for customization and attribution.
+
+After upgrading an existing installation, use **Manage → Rebuild All** to regenerate thread, index and catalog pages. Keep your existing `settings.php`, database and uploads.
+
 ## Requirements
 
 - PHP 8.5+, 64 bit, with GD/FreeType, mbstring, fileinfo, curl, PDO, and the selected PDO database driver.
@@ -79,3 +87,5 @@ It checks an in-memory SQLite database, prepared queries, password verification,
 GD image uploads and thumbnails were exercised. Optional remote providers, video processing, ImageMagick, FFmpeg and ExifTool require their own services/programs and were not exercised end to end.
 
 Original TinyIB attribution and MIT licensing are retained in `LICENSE`.
+
+The stylesheet integration was checked across all 35 themes on index, catalog, thread and management login pages at desktop and phone widths (280 combinations). Browser checks covered posting, deletion, management login, quote previews, saved style selection and image/video expansion. Theme assets were verified through both the PHP router and nginx. Vichan and Tinyboard notices are retained in `LICENSE.Vichan.md`, `LICENSE.Tinyboard.md` and the page footer.

@@ -13,7 +13,7 @@ trait Rendering
 
         return <<<EOF
             <!DOCTYPE html>
-            <html>
+            <html lang="en">
             	<head>
             		<meta http-equiv="content-type" content="text/html;charset=UTF-8">
             		<meta http-equiv="cache-control" content="max-age=0">
@@ -26,32 +26,47 @@ trait Rendering
             		<link rel="shortcut icon" href="favicon.ico">
             		$stylesheets
             		<script src="js/jquery.js"></script>
-            		<script src="js/tinyib.js"></script>
+            		<script src="js/tinyib.js?v=vichan-1"></script>
             <script src="js/security.js" defer></script>
             		
             	</head>
             EOF;
     }
 
+    /** @return array<string, string> */
+    private function pageStyleOptions(): array
+    {
+        $styles = ['style' => 'Yotsuba B (original)'];
+        foreach (glob(dirname(__DIR__) . '/stylesheets/*.css') ?: [] as $file) {
+            $name = pathinfo($file, PATHINFO_FILENAME);
+            if ($name !== 'style' && preg_match('/^[a-zA-Z0-9_+\-]+$/D', $name)) {
+                $styles[$name] = ucwords(str_replace(['-', '_', '+'], [' ', ' ', ' + '], $name));
+            }
+        }
+        return $styles;
+    }
+
+    private function pageDefaultStyle(): string
+    {
+        return array_key_exists($this->config->defaultstyle, $this->pageStyleOptions()) ? $this->config->defaultstyle : 'style';
+    }
+
     private function pageStylesheets(): string
     {
+        $style = rawurlencode($this->pageDefaultStyle());
+        return '<link rel="stylesheet" href="stylesheets/style.css">'
+            . '<link rel="stylesheet" href="stylesheets/' . $style . '.css" id="mainStylesheet">'
+            . '<link rel="stylesheet" href="css/vichan-adapter.css?v=1">';
+    }
 
-        // Global stylesheet
-        $return = '<link rel="stylesheet" type="text/css" href="css/global.css">';
-
-        // Default stylesheet
-        $return .= '<link rel="stylesheet" type="text/css" href="css/' . htmlentities($this->config->defaultstyle, ENT_QUOTES) . '.css" title="' . htmlentities($this->config->stylesheets[$this->config->defaultstyle], ENT_QUOTES) . '" id="mainStylesheet">';
-
-        // Additional stylesheets
-        foreach ($this->config->stylesheets as $filename => $title) {
-            if ($filename === $this->config->defaultstyle) {
-                continue;
-            }
-
-            $return .= '<link rel="alternate stylesheet" type="text/css" href="css/' . htmlentities($filename, ENT_QUOTES) . '.css" title="' . htmlentities($title, ENT_QUOTES) . '">';
+    private function pageStyleSelector(): string
+    {
+        $selected = $this->pageDefaultStyle();
+        $html = '<label class="theme-picker" for="switchStylesheet">Style <select id="switchStylesheet">';
+        foreach ($this->pageStyleOptions() as $name => $title) {
+            $html .= '<option value="' . $this->cleanString($name) . '"' . ($name === $selected ? ' selected' : '') . '>' . $this->cleanString($title) . '</option>';
         }
-
-        return $return;
+        return $html . '</select></label>';
     }
 
     private function pageFooter(): string
@@ -62,6 +77,7 @@ trait Rendering
         return <<<EOF
             		<div class="footer">
             			- <a href="http://www.2chan.net" target="_blank">futaba</a> + <a href="http://www.1chan.net" target="_blank">futallaby</a> + <a href="https://codeberg.org/tslocum/tinyib" target="_blank">tinyib</a> -
+                <p>Styles: <a href="https://github.com/vichan-devel/vichan">vichan</a> Copyright &copy; 2012-2025 vichan-devel<br>Tinyboard Copyright &copy; 2010-2014 Tinyboard Development Group</p>
             		</div>
             	</body>
             </html>
@@ -156,9 +172,9 @@ trait Rendering
             $form_extra = '<input type="hidden" name="staffpost" value="1">';
             $input_extra = <<<EOF
                 					<tr>
-                						<td class="postblock">
+                						<th class="postblock" scope="row">
                 							$txt_raw_html
-                						</td>
+                						</th>
                 						<td>
                 							<label>
                 								<input type="checkbox" name="raw" value="1" accesskey="r">&nbsp;$txt_enable<br>
@@ -168,9 +184,9 @@ trait Rendering
                 						</td>
                 					</tr>
                 					<tr>
-                						<td class="postblock">
+                						<th class="postblock" scope="row">
                 							$txt_reply_to
-                						</td>
+                						</th>
                 						<td>
                 							<input type="text" name="parent" size="28" maxlength="75" value="0" accesskey="t">&nbsp;$txt_new_thread
                 						</td>
@@ -204,9 +220,9 @@ trait Rendering
             $txt_captcha = 'CAPTCHA';
             $captcha_html = <<<EOF
                 					<tr>
-                						<td class="postblock">
+                						<th class="postblock" scope="row">
                 							$txt_captcha
-                						</td>
+                						</th>
                 						<td>
                 							$captcha_inner_html
                 						</td>
@@ -229,9 +245,9 @@ trait Rendering
             }
             $file_input_html = <<<EOF
                 					<tr>
-                						<td class="postblock">
+                						<th class="postblock" scope="row">
                 							$txt_file
-                						</td>
+                						</th>
                 						<td>
                 							<input type="file" name="file" size="35" accesskey="f">
                 							$spoiler_html
@@ -247,9 +263,9 @@ trait Rendering
             $txt_embed_help = '(paste a YouTube URL)';
             $embed_input_html = <<<EOF
                 					<tr>
-                						<td class="postblock">
+                						<th class="postblock" scope="row">
                 							$txt_embed
-                						</td>
+                						</th>
                 						<td>
                 							<input type="text" name="embed" size="28" accesskey="x" autocomplete="off">&nbsp;&nbsp;$txt_embed_help
                 						</td>
@@ -279,7 +295,7 @@ trait Rendering
         }
 
         $output = <<<EOF
-            		<div class="postarea">
+            		<div class="postarea post-form">
             			<form name="postform" id="postform" action="$form_action" method="post" enctype="multipart/form-data">
             			$max_file_size_input_html
             			$form_extra
@@ -291,9 +307,9 @@ trait Rendering
             $txt_name = 'Name';
             $output .= <<<EOF
                 					<tr>
-                						<td class="postblock">
+                						<th class="postblock" scope="row">
                 							$txt_name
-                						</td>
+                						</th>
                 						<td>
                 							<input type="text" name="name" size="28" maxlength="{$maxlen_name}" accesskey="n">
                 							{$postform_extra['name']}
@@ -305,9 +321,9 @@ trait Rendering
             $txt_email = 'E-mail';
             $output .= <<<EOF
                 					<tr>
-                						<td class="postblock">
+                						<th class="postblock" scope="row">
                 							$txt_email
-                						</td>
+                						</th>
                 						<td>
                 							<input type="text" name="email" size="28" maxlength="{$maxlen_email}" accesskey="e">
                 							{$postform_extra['email']}
@@ -319,9 +335,9 @@ trait Rendering
             $txt_subject = 'Subject';
             $output .= <<<EOF
                 					<tr>
-                						<td class="postblock">
+                						<th class="postblock" scope="row">
                 							$txt_subject
-                						</td>
+                						</th>
                 						<td>
                 							<input type="text" name="subject" size="40" maxlength="{$maxlen_subject}" accesskey="s" autocomplete="off">
                 							{$postform_extra['subject']}
@@ -333,9 +349,9 @@ trait Rendering
             $txt_message = 'Message';
             $output .= <<<EOF
                 					<tr>
-                						<td class="postblock">
+                						<th class="postblock" scope="row">
                 							$txt_message
-                						</td>
+                						</th>
                 						<td>
                 							<textarea id="message" name="message" cols="48" rows="4" maxlength="{$maxlen_message}" accesskey="m"></textarea>
                 						</td>
@@ -353,9 +369,9 @@ trait Rendering
             $txt_password_help = '(for post and file deletion)';
             $output .= <<<EOF
                 					<tr>
-                						<td class="postblock">
+                						<th class="postblock" scope="row">
                 							$txt_password
-                						</td>
+                						</th>
                 						<td>
                 							<input type="password" name="password" id="newpostpassword" size="8" accesskey="p">&nbsp;&nbsp;$txt_password_help
                 						</td>
@@ -491,18 +507,15 @@ trait Rendering
         }
 
         if ($filesize != '') {
-            $filesize = '<span class="filesize">' . $filesize . '</span>';
+            $filesize = '<p class="fileinfo filesize">' . $filesize . '</p>';
         }
 
         if ($filesize != '') {
-            if ($post['parent'] != 0) {
-                $filehtml .= '<br>';
-            }
-            $filehtml .= $filesize . '<br><div id="thumbfile' . $post['id'] . '">';
+            $filehtml .= '<div class="file">' . $filesize . '<div id="thumbfile' . $post['id'] . '">';
             if ($post['thumb_width'] > 0 && $post['thumb_height'] > 0) {
                 $filehtml .= <<<EOF
                     $thumblink
-                    	<img src="thumb/{$post['thumb']}" alt="{$post['id']}" class="thumb" id="thumbnail{$post['id']}" width="{$post['thumb_width']}" height="{$post['thumb_height']}">
+                    	<img src="thumb/{$post['thumb']}" alt="{$post['id']}" class="post-image thumb" id="thumbnail{$post['id']}" width="{$post['thumb_width']}" height="{$post['thumb_height']}">
                     </a>
                     EOF;
             }
@@ -511,37 +524,27 @@ trait Rendering
             if ($expandhtml != '') {
                 $filehtml .= <<<EOF
                     <div id="expand{$post['id']}" style="display: none;">$expandhtml</div>
-                    <div id="file{$post['id']}" class="thumb" style="display: none;"></div>
+                    <div id="file{$post['id']}" class="file-expanded" style="display: none;"></div>
                     EOF;
             }
         }
-        if ($post['parent'] == 0) {
-            $return .= '<div id="post' . $post['id'] . '" class="op">';
-            $return .= $filehtml;
-        } else {
-            if ($compact) {
-                $return .= '<div id="' . $post['id'] . '" class="' . ($post['parent'] == 0 ? 'op' : 'reply') . '">';
-            } else {
-                $return .= <<<EOF
-                    <table>
-                    <tbody>
-                    <tr>
-                    <td class="doubledash">
-                    	&#0168;
-                    </td>
-                    <td class="reply" id="post{$post['id']}">
-                    EOF;
-            }
+        if ($filehtml !== '') {
+            $filehtml .= '</div>';
         }
+        // Aliases also style existing posts, whose formatted content is stored in the database.
+        $post['nameblock'] = str_replace(['class="postername"', 'class="postertrip"'], ['class="name postername"', 'class="trip postertrip"'], $post['nameblock']);
+        $post['message'] = str_replace('class="unkfunc"', 'class="quote unkfunc"', $post['message']);
+        $postClass = $post['parent'] === 0 ? 'op' : 'reply';
+        $return .= '<div id="post' . $post['id'] . '" class="post ' . $postClass . '">';
 
         $return .= <<<EOF
             <a id="{$post['id']}"></a>
-            <label>
-            	<input type="checkbox" name="delete[]" value="{$post['id']}"> 
+            <p class="intro"><label>
+            	<input class="delete" type="checkbox" name="delete[]" value="{$post['id']}">
             EOF;
 
         if ($post['subject'] != '') {
-            $return .= ' <span class="filetitle">' . $post['subject'] . '</span> ';
+            $return .= ' <span class="subject filetitle">' . $post['subject'] . '</span> ';
         }
 
         $return .= <<<EOF
@@ -556,10 +559,6 @@ trait Rendering
             $return .= $this->backlinks($post);
         }
 
-        if ($post['parent'] != 0) {
-            $return .= $filehtml;
-        }
-
         if ($post['parent'] == 0) {
             if ($res == false) {
                 $return .= "&nbsp;[<a href=\"res/{$post['id']}.html\">" . 'Reply' . '</a>]';
@@ -567,13 +566,15 @@ trait Rendering
             $return .= $this->backlinks($post);
         }
 
+        $return .= '</p>' . $filehtml;
+
         if ($this->config->truncate > 0 && !$res && $this->countOccurrences($post['message'], '<br>') > $this->config->truncate) { // Truncate messages on board index pages for readability
             $br_offsets = $this->strallpos($post['message'], '<br>');
             $post['message'] = $this->substring($post['message'], 0, $br_offsets[$this->config->truncate - 1]);
             $post['message'] .= '<br><span class="omittedposts">' . 'Post truncated. Click Reply to view.' . '</span><br>';
         }
         $return .= <<<EOF
-            <div class="message">
+            <div class="body message">
             {$post['message']}
             </div>
             EOF;
@@ -587,15 +588,8 @@ trait Rendering
                     $return .= '<span class="omittedposts">' . sprintf('%d posts omitted. Click Reply to view.', $post['omitted']) . '</span>';
                 }
             }
-        } elseif ($compact) {
-            $return .= '</div>';
         } else {
-            $return .= <<<EOF
-                </td>
-                </tr>
-                </tbody>
-                </table>
-                EOF;
+            $return .= '</div><br class="clear">';
         }
 
         return $return;
@@ -605,7 +599,7 @@ trait Rendering
     {
 
         $cataloglink = $this->config->catalog ? ('[<a href="catalog.html" style="text-decoration: underline;">' . 'Catalog' . '</a>]') : '';
-        $managelink = ($this->config->managekey == '') ? ('[<a href="' . basename($this->request->server['PHP_SELF']) . '?manage"" style="text-decoration: underline;">' . 'Manage' . '</a>]') : '';
+        $managelink = ($this->config->managekey == '') ? ('[<a href="' . basename($this->request->server['PHP_SELF']) . '?manage" style="text-decoration: underline;">' . 'Manage' . '</a>]') : '';
 
         $postingmode = '';
         $pagenavigator = '';
@@ -651,9 +645,9 @@ trait Rendering
                     EOF;
             }
         } elseif ($parent == -1) {
-            $postingmode = '&#91;<a href="index.html">' . 'Return' . '</a>&#93;<div class="replymode">' . 'Catalog' . '</div> ';
+            $postingmode = '&#91;<a href="index.html">' . 'Return' . '</a>&#93;<div class="banner replymode">' . 'Catalog' . '</div> ';
         } else {
-            $postingmode = '&#91;<a href="../">' . 'Return' . '</a>&#93;<div class="replymode">' . 'Posting mode: Reply' . '</div> ';
+            $postingmode = '&#91;<a href="../">' . 'Return' . '</a>&#93;<div class="banner replymode">' . 'Posting mode: Reply' . '</div> ';
         }
 
         $postform = '';
@@ -663,41 +657,34 @@ trait Rendering
 
         $js = '<script type="text/javascript">';
         $js .= 'var enablebacklinks = ' . ($this->config->backlinks ? 'true' : 'false') . ';';
-        if ($parent != 0 && $this->config->autorefresh > 0) {
+        if ($parent > 0 && $this->config->autorefresh > 0) {
             $js .= 'var autoRefreshDelay = ' . $this->config->autorefresh . ';';
             $js .= 'var autoRefreshThreadID = ' . $parent . ';';
             $js .= 'var autoRefreshPostID = ' . $lastpostid . ';';
         }
         $js .= '</script>';
 
-        $txt_style = 'Style';
         $txt_password = 'Password';
         $txt_delete = 'Delete';
         $txt_delete_post = 'Delete Post';
 
-        $select_style = '';
-        if (count($this->config->stylesheets) > 1) {
-            $select_style = '<select id="switchStylesheet">';
-
-            $select_style .= '<option value="">' . $txt_style . '</option>';
-            foreach ($this->config->stylesheets as $filename => $title) {
-                $select_style .= '<option value="' . htmlentities($filename, ENT_QUOTES) . '">' . htmlentities($title) . '</option>';
-            }
-
-            $select_style .= '</select>';
-        }
+        $select_style = $this->pageStyleSelector();
+        $bodyClass = $parent === -1 ? 'tinyib theme-catalog' : 'tinyib';
+        $postsClass = match ($parent) {
+            -1 => 'threads', 0 => 'board-posts', default => 'thread'
+        };
 
         $body = <<<EOF
-            	<body>
-            		<div class="adminbar">
+            	<body class="$bodyClass">
+            		<div class="boardlist adminbar">
             			$cataloglink
             			$managelink
             			$select_style
             		</div>
-            		<div class="logo">
+            		<header><h1 class="logo">
             EOF;
         $body .= $this->config->logo . $this->config->boarddesc . <<<EOF
-            		</div>
+            		</h1></header>
             		<hr width="90%">
             		$postingmode
             		$postform
@@ -706,7 +693,7 @@ trait Rendering
             		<input type="hidden" name="board" 
             EOF;
         $body .= 'value="' . $this->config->board . '">' . <<<EOF
-            		<div id="posts">
+            		<div id="posts" class="$postsClass">
             		$htmlposts
             		</div>
             		<hr>
@@ -720,7 +707,7 @@ trait Rendering
             			</tbody>
             		</table>
             		</form>
-            		$pagenavigator
+            		<div class="pages">$pagenavigator</div>
             		<br>
             EOF;
         return $this->pageHeader() . $body . $this->pageFooter();
@@ -728,23 +715,22 @@ trait Rendering
 
     private function buildCatalogPost(array $post): string
     {
-        $maxwidth = max(100, $post['thumb_width']);
         $thumb = '#' . $post['id'];
         if ($post['thumb'] != '') {
             $thumb = <<<EOF
-                		<img src="thumb/{$post['thumb']}" alt="{$post['id']}" width="{$post['thumb_width']}" height="{$post['thumb_height']}" border="0">
+                		<img src="thumb/{$post['thumb']}" alt="{$post['id']}" width="{$post['thumb_width']}" height="{$post['thumb_height']}" class="thread-image" loading="lazy">
                 EOF;
         }
         $replies = $this->numRepliesToThreadByID($post['id']);
         $subject = trim($post['subject']) != '' ? $post['subject'] : $this->substring(trim(str_ireplace("\n", '', strip_tags($post['message']))), 0, 75);
 
         return <<<EOF
-            <div class="catalogpost" style="max-width: {$maxwidth}px;">
+            <div class="thread catalogpost">
             	<a href="res/{$post['id']}.html">
             		$thumb
-            	</a><br>
-            	<b>$replies</b><br>
-            	$subject
+            	</a>
+            	<p class="replies">Replies: <b>$replies</b></p>
+            	<div class="catalog-subject">$subject</div>
             </div>
             EOF;
     }
@@ -781,7 +767,7 @@ trait Rendering
             if ($i > 0) {
                 $htmlposts .= "\n<hr>";
             }
-            $htmlposts .= $this->buildPost($thread, false) . implode('', array_reverse($htmlreplies));
+            $htmlposts .= '<div class="thread" id="thread' . $thread['id'] . '">' . $this->buildPost($thread, false) . implode('', array_reverse($htmlreplies)) . '</div>';
 
             if (++$i >= $this->config->threadsperpage) {
                 $file = ($page == 0) ? $this->config->index : ($page . '.html');
@@ -890,19 +876,19 @@ trait Rendering
 
     private function managePage(string $text, string $onload = ''): string
     {
-        $adminbar = $this->adminBar();
+        $adminbar = $this->adminBar() . ' ' . $this->pageStyleSelector();
         $txt_manage_mode = 'Manage mode';
         $body = <<<EOF
-            	<body$onload>
-            		<div class="adminbar">
+            	<body class="tinyib manage-page"$onload>
+            		<div class="boardlist adminbar">
             			$adminbar
             		</div>
-            		<div class="logo">
+            		<header><h1 class="logo">
             EOF;
         $body .= $this->config->logo . $this->config->boarddesc . <<<EOF
-            		</div>
+            		</h1></header>
             		<hr width="90%">
-            		<div class="replymode">$txt_manage_mode</div>
+            		<div class="banner replymode">$txt_manage_mode</div>
             		$text
             		<hr>
             EOF;

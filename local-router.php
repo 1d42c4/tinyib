@@ -38,6 +38,7 @@ $allowed = preg_match('~^/(?:index|catalog|[0-9]+)\.html$~', $path)
     || preg_match('~^/(?:catalog|threads)\.json$~', $path)
     || preg_match('~^/res/[0-9]+\.(?:html|json)$~', $path)
     || preg_match('~^/(?:css/[^/]+\.css|js/[^/]+\.js)$~', $path)
+    || preg_match('~^/stylesheets/(?:[a-zA-Z0-9_+.-]+/)*[a-zA-Z0-9_+.-]+\.(?:css|png|gif|jpe?g|svg|ico|woff2?|ttf|eot)$~i', $path)
     || preg_match('~^/(?:src|thumb)/[^/]+\.(?:jpe?g|png|gif|webp|ico|swf|aac|flac|ogg|opus|mp3|mp4|wav|webm)$~i', $path)
     || in_array($path, ['/favicon.ico', '/lock.png', '/sticky.png', '/swf_thumbnail.png', '/video_overlay.png'], true);
 
@@ -54,7 +55,9 @@ $types = [
     'swf' => 'application/x-shockwave-flash', 'aac' => 'audio/aac',
     'flac' => 'audio/flac', 'ogg' => 'audio/ogg', 'opus' => 'audio/ogg',
     'mp3' => 'audio/mpeg', 'mp4' => 'video/mp4', 'wav' => 'audio/wav',
-    'webm' => 'video/webm',
+    'webm' => 'video/webm', 'svg' => 'image/svg+xml',
+    'woff' => 'font/woff', 'woff2' => 'font/woff2', 'ttf' => 'font/ttf',
+    'eot' => 'application/vnd.ms-fontobject',
 ];
 $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
 header('Content-Type: ' . $types[$extension]);
